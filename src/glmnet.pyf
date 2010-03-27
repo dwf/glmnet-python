@@ -1,8 +1,8 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module glmnet ! in 
-    interface  ! in :glmnet
+python module _glmnet ! in 
+    interface  ! in :_glmnet
         subroutine elnet(ka,parm,no,ni,x,y,w,jd,vp,ne,nx,nlam,flmin,ulam,thr,isd,lmu,a0,ca,ia,nin,rsq,alm,nlp,jerr) ! in :glmnet:glmnet.f
             integer optional :: ka=1 ! Use covariance updates over naive by default
             real :: parm
@@ -13,8 +13,8 @@ python module glmnet ! in
             real dimension(no),depend(no) :: w
             integer dimension(*) :: jd
             real dimension(ni),depend(ni) :: vp
-            integer :: ne
-            integer optional,check(shape(ca,0)==nx),depend(ca) :: nx=shape(ca,0)
+            integer optional,depend(x) :: ne=shape(x,1)
+            integer :: nx
             integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
             real :: flmin
             real dimension(nlam) :: ulam
@@ -60,12 +60,12 @@ python module glmnet ! in
             real dimension(no),depend(no) :: w
             integer dimension(*) :: jd
             real dimension(ni) :: vp
-            integer :: ne
+            integer optional, depend(x) :: ne=shape(x,1)
             integer optional,check(shape(ca,0)==nx),depend(ca) :: nx=shape(ca,0)
             integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
             real :: flmin
             real dimension(nlam) :: ulam
-            real :: thr
+            real optional :: thr=1.0e-4
             integer optional :: isd=1 ! Standardize predictors by default
             
             ! Output arguments
