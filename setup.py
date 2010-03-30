@@ -2,12 +2,16 @@ from numpy.distutils.misc_util import Configuration
 from numpy.distutils.system_info import get_info
 import os, sys
 
-fflags= '-fdefault-real-8 -ffixed-form -g'
+import sys
+
+fflags= '-fdefault-real-8 -ffixed-form'
+
+# TODO: Fix it so that these flags are default.
+
 config = Configuration(
     'glmnet',
     parent_package=None,
-    top_path=None,
-    f2py_options='--f77flags=\'%s\' --f90flags=\'%s\'' % (fflags, fflags)
+    top_path=None
 )
 
 f_sources = ['src/glmnet.pyf','src/glmnet.f']
