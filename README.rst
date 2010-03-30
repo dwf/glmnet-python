@@ -20,6 +20,7 @@ it does not support ``-fdefault-real-8``.
 The way to get this to build properly is:
 
 ::
+
     python setup.py config_fc --fcompiler=gnu95 \
         --f77flags='-fdefault-real-8' \
         --f90flags='-fdefault-real-8' build
