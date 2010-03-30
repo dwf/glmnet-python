@@ -3,6 +3,9 @@ glmnet wrappers for Python
 
 Very much a work in progress.
 
+Building
+--------
+
 In order to get double precision working without modifying Friedman's code,
 some compiler trickery is required. The wrappers have been written such that
 everything returned is expected to be a ``real*8`` i.e. a double-precision
@@ -27,3 +30,22 @@ The way to get this to build properly is:
 
 The ``--fcompiler=gnu95`` business may be omitted if gfortran is the only 
 Fortran compiler you have installed, but the compiler flags are essential.
+
+License
+-------
+
+Friedman's code in ``glmnet.f`` is released under the GPLv2, necessitating that
+any code that uses it (including my wrapper, and anyone using my wrapper)
+be released under the GPLv2 as well. See LICENSE for details.
+
+That said, to the extent that they are useful in the absence of the GPL Fortran
+code (i.e. not very), my portions may be used under the 3-clause BSD license.
+
+Thanks
+------
+
+* To Jerome Friedman for the fantastically fast and efficient Fortran code.
+* To Pearu Peterson for writing ``f2py`` and answering my dumb questions.
+* To Dag Sverre Seljebotn for his help with ``f2py`` wrangling.
+* To Kevin Jacobs for showing me `his wrapper <http://code.google.com/p/glu-genetics/source/browse/trunk/glu/lib/glm/glmnet.pyf>` 
+  which helped me side-step some problems with the auto-generated ``.pyf``.
