@@ -47,5 +47,5 @@ Thanks
 * To Jerome Friedman for the fantastically fast and efficient Fortran code.
 * To Pearu Peterson for writing ``f2py`` and answering my dumb questions.
 * To Dag Sverre Seljebotn for his help with ``f2py`` wrangling.
-* To Kevin Jacobs for showing me `his wrapper <http://code.google.com/p/glu-genetics/source/browse/trunk/glu/lib/glm/glmnet.pyf>` 
+* To Kevin Jacobs for showing me `his wrapper <http://code.google.com/p/glu-genetics/source/browse/trunk/glu/lib/glm/glmnet.pyf>`_ 
   which helped me side-step some problems with the auto-generated ``.pyf``.
