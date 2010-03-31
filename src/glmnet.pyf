@@ -32,13 +32,15 @@ python module _glmnet ! in
             integer intent(out) :: nlp
             integer intent(out) :: jerr
         end subroutine elnet
+        
         subroutine uncomp(ni,ca,ia,nin,a) ! in :glmnet:glmnet.f
-            integer optional,check(len(a)>=ni),depend(a) :: ni=len(a)
+            integer  :: ni
             real*8 dimension(*) :: ca
             integer dimension(*) :: ia
             integer :: nin
-            real*8 dimension(ni) :: a
+            real*8 intent(out),dimension(ni),depend(ni) :: a
         end subroutine uncomp
+
         subroutine modval(a0,ca,ia,nin,n,x,f) ! in :glmnet:glmnet.f
             real*8 :: a0
             real*8 dimension(nin) :: ca
