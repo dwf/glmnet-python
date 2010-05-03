@@ -63,5 +63,18 @@ def elastic_net(predictors, target, balance, memlimit=None,
         flmin = kwargs['flmin'] if 'flmin' in kwargs else _DEFAULT_FLMIN
         nlam = kwargs['nummodels'] if 'nummodels' in kwargs else _DEFAULT_NLAM
 
-    return _glmnet.elnet(balance, predictors, target, weights, jd, vp,
-                         memlimit, flmin, ulam, thr, nlam=nlam)
+    lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr =  \
+            _glmnet.elnet(balance, predictors, target, weights, jd, vp,
+                          memlimit, flmin, ulam, thr, nlam=nlam)
+    
+    if jerr != 0:
+        if jerr == 10000:
+            raise ValueError('cannot have max(vp) < 0.0')
+        elif jerr == 7777:
+            raise ValueError('all used predictors have 0 variance')
+        elif jerr < 7777:
+            raise MemoryError('elnet() returned error code %d' % jerr)
+        else:
+            raise Exception('unknown error: %d' % jerr)
+    
+    return lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr
