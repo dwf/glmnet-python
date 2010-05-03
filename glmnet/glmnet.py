@@ -5,14 +5,6 @@ _DEFAULT_THRESHOLD = 1.0e-4
 _DEFAULT_FLMIN = 0.001
 _DEFAULT_NLAM = 100
 
-# lmu,a0,ca,ia,nin,rsq,alm,nlp,jerr = elnet(parm,x,y,w,jd,vp,nx,flmin,ulam,thr,[ka,ne,nlam,isd])
-
-def _check_keywords(kwdict, name, default):
-    if name in kwdict:
-        return kwdict[name]
-    else:
-        return default
-
 def elastic_net(predictors, target, balance, memlimit=None,
                 largest=None, **kwargs):
 
@@ -53,20 +45,25 @@ def elastic_net(predictors, target, balance, memlimit=None,
     # Decide on regularization scheme based on keyword parameters.
     if 'lambdas' in kwargs:
         if 'flmin' in kwargs:
-            raise ValueError("Can't specify both lambda and flmin keywords")
-        ulam = np.asarray(kwargs['lambda'])
+            raise ValueError("Can't specify both lambdas and flmin keywords")
+        ulam = np.asarray(kwargs['lambdas'])
+
         # Pass flmin > 1.0 indicating to use the user-supplied lambda values.
         flmin = 2.
         nlam = len(ulam)
     else:
+        # If there are no user-provided lambdas, use flmin/nummodels to
+        # specify the regularization levels tried.
         ulam = None
         flmin = kwargs['flmin'] if 'flmin' in kwargs else _DEFAULT_FLMIN
         nlam = kwargs['nummodels'] if 'nummodels' in kwargs else _DEFAULT_NLAM
 
+    # Call the Fortran wrapper.
     lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr =  \
             _glmnet.elnet(balance, predictors, target, weights, jd, vp,
                           memlimit, flmin, ulam, thr, nlam=nlam)
     
+    # Check for errors, documented in glmnet.f.
     if jerr != 0:
         if jerr == 10000:
             raise ValueError('cannot have max(vp) < 0.0')
