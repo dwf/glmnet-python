@@ -14,7 +14,7 @@ config = Configuration(
     top_path=None
 )
 
-f_sources = ['src/glmnet.pyf','src/glmnet.f']
+f_sources = ['glmnet/glmnet.pyf','glmnet/glmnet.f']
 
 config.add_extension(name='_glmnet',sources=f_sources)
 config_dict = config.todict()
@@ -27,5 +27,6 @@ if __name__ == '__main__':
           url='github.com/dwf/glmnet-python',
           license='GPL2',
           requires=['NumPy (>= 1.3)'],
+          packages=['glmnet'],
           **config_dict)
 
