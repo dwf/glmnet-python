@@ -15,7 +15,7 @@ python module _glmnet ! in
             real*8 dimension(ni),depend(ni) :: vp
             integer optional,depend(x) :: ne=min(shape(x,1), nx)
             integer :: nx
-            integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
+            integer optional,check(len(ulam)<=nlam),depend(ulam) :: nlam=len(ulam)
             real*8 :: flmin
             real*8 dimension(nlam) :: ulam
             real*8 :: thr
