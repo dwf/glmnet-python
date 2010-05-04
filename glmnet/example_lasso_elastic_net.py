@@ -10,7 +10,7 @@ w[10:] = 0
 y = np.dot(X, w)
 enet = ElasticNet(alpha=0.1)
 y_pred = enet.fit(X, y).predict(X)
-print enet.coef_
+print enet
 
 # =====================
 # = Compute full path =

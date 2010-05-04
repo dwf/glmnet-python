@@ -14,7 +14,7 @@ def elastic_net(predictors, target, balance, memlimit=None,
         if 'overwrite_pred_ok' not in kwargs or not kwargs['overwrite_pred_ok']:
             # Might as well make it F-ordered to avoid ANOTHER copy.
             predictors = predictors.copy(order='F')
-    
+
     # target being a 1-dimensional array will usually be overwritten
     # with the standardized version unless we take steps to copy it.
     if 'overwrite_targ_ok' not in kwargs or not kwargs['overwrite_targ_ok']:
@@ -28,7 +28,7 @@ def elastic_net(predictors, target, balance, memlimit=None,
 
     elif balance < 0.0 or balance > 1.0:
         raise ValueError('Must have 0.0 <= balance <= 1.0')
-    
+
     # Minimum change in largest predictor coefficient to continue processing
     thr = kwargs['threshold'] if 'threshold' in kwargs else _DEFAULT_THRESHOLD
 
@@ -45,7 +45,7 @@ def elastic_net(predictors, target, balance, memlimit=None,
     vp = np.asarray(kwargs['penalties']).copy() \
             if 'penalties' in kwargs \
             else np.ones(predictors.shape[1])
-    
+
     # Predictors to exclude completely.
     if 'exclude' in kwargs:
         exclude = list(kwargs['exclude'])
@@ -74,7 +74,7 @@ def elastic_net(predictors, target, balance, memlimit=None,
     lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr =  \
             _glmnet.elnet(balance, predictors, target, weights, jd, vp,
                           memlimit, flmin, ulam, thr, nlam=nlam)
-    
+
     # Check for errors, documented in glmnet.f.
     if jerr != 0:
         if jerr == 10000:
@@ -85,9 +85,10 @@ def elastic_net(predictors, target, balance, memlimit=None,
             raise MemoryError('elnet() returned error code %d' % jerr)
         else:
             raise Exception('unknown error: %d' % jerr)
-    
-    return GlmnetLinearResults(lmu, a0, ca, ia, nin, rsq, alm, nlp,
-                               predictors.shape[1], balance)
+
+    return lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr
+    # return GlmnetLinearResults(lmu, a0, ca, ia, nin, rsq, alm, nlp,
+    #                            predictors.shape[1], balance)
 
 
 class GlmnetLinearModel(object):
@@ -111,7 +112,7 @@ class GlmnetLinearModel(object):
         predictors = np.atleast_2d(np.asarray(predictors))
         return self._intercept + \
                 np.dot(predictors[:,self._indices], self._coefficients)
-    
+
     @property
     def coefficients(self):
         coeffs = np.zeros(self._npred)
@@ -140,10 +141,10 @@ class GlmnetLinearResults(object):
                 " * %d values of lambda\n" + \
             " * computed in %d passes over data\n" + \
             " * largest model: %d predictors (%.1f%%), train r^2 = %.4f") % \
-            (self.__class__.__name__, self._parm, self._lmu, self._nlp, 
-             self._nin[ninp], self._nin[ninp] / float(self._npred) * 100, 
-             self._rsq[ninp]) 
-    
+            (self.__class__.__name__, self._parm, self._lmu, self._nlp,
+             self._nin[ninp], self._nin[ninp] / float(self._npred) * 100,
+             self._rsq[ninp])
+
     def __len__(self):
         return self._lmu
 
@@ -163,12 +164,12 @@ class GlmnetLinearResults(object):
                         self._npred
                     )
             self._model_objects[item] = model
-        
+
         else:
             model = self._model_objects[item]
-        
+
         return model
-    
+
     @property
     def nummodels(self):
         return self._lmu
@@ -184,7 +185,7 @@ class GlmnetLinearResults(object):
 def plot_paths(results, which_to_label=None):
     import matplotlib
     import matplotlib.pyplot as plt
-    plt.clf() 
+    plt.clf()
     interactive_state = plt.isinteractive()
     for index, path in enumerate(results.coefficients):
         if which_to_label and results.indices[index] in which_to_label:
@@ -194,8 +195,8 @@ def plot_paths(results, which_to_label=None):
                 label = which_to_label[results.indices[index]]
         else:
             label = None
-        
-            
+
+
         if which_to_label and label is None:
             plt.plot(path, ':')
         else:
@@ -206,6 +207,6 @@ def plot_paths(results, which_to_label=None):
     plt.title('Regularization paths')
     plt.xlabel('Model index (different values of $\\lambda$)')
     plt.ylabel('Value of regression coefficient $\hat{\\beta}_i$')
-    
+
     plt.show()
     plt.interactive(interactive_state)
