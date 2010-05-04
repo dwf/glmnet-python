@@ -1,83 +1,100 @@
 import numpy as np
 import _glmnet
 
-_DEFAULT_THRESHOLD = 1.0e-4
+_DEFAULT_THRESH = 1.0e-4
 _DEFAULT_FLMIN = 0.001
 _DEFAULT_NLAM = 100
 
 def elastic_net(predictors, target, balance, memlimit=None,
                 largest=None, **kwargs):
-
+    """
+    Raw-output wrapper for elastic net linear regression.
+    """
+    
+    # Mandatory parameters
     predictors = np.asanyarray(predictors)
     target = np.asanyarray(target)
 
+    # Decide on largest allowable models for memory/convergence.
+    memlimit = predictors.shape[1] if memlimit is None else memlimit
+    
+    # If largest isn't specified use memlimit.
+    largest = memlimit if largest is None else largest
+    
+    if memlimit < largest:
+        raise ValueError('Need largest <= memlimit')
+
+    # Flags determining overwrite behavior
+    overwrite_pred_ok = False
+    overwrite_targ_ok = False
+    
+    thr = _DEFAULT_THRESH   # Minimum change in largest coefficient
+    weights = None          # Relative weighting per observation case
+    vp = None               # Relative penalties per predictor (0 = no penalty)
+    isd = True              # Standardize input variables before proceeding?
+    jd = np.zeros(1)        # Predictors to exclude altogether from fitting
+    ulam = None             # User-specified lambda values
+    flmin = _DEFAULT_FLMIN  # Fraction of largest lambda at which to stop
+    nlam = _DEFAULT_NLAM    # The (maximum) number of lambdas to try.
+
+    for keyword in kwargs:
+        if keyword == 'overwrite_pred_ok':
+            overwrite_pred_ok = kwargs[keyword]
+        elif keyword == 'overwrite_targ_ok':
+            overwrite_targ_ok = kwargs[keyword]
+        elif keyword == 'threshold':
+            thr = kwargs[keyword]
+        elif keyword == 'weights':
+            weights = np.asarray(kwargs[keyword]).copy()
+        elif keyword == 'penalties':
+            vp = kwargs[keyword].copy()
+        elif keyword == 'standardize':
+            isd = bool(kwargs[keyword])
+        elif keyword == 'exclude':
+            exclude = list(kwargs[keyword])
+            jd = np.array([len(exclude)] + exclude)
+        elif keyword == 'lambdas':
+            if 'flmin' in kwargs:
+                raise ValueError("Can't specify both lambdas & flmin keywords")
+            ulam = np.asarray(kwargs[keyword])
+            flmin = 2. # Pass flmin > 1.0 indicating to use the user-supplied.
+            nlam = len(ulam)
+        elif keyword == 'flmin':
+            flmin = kwargs[keyword]
+            ulam = None
+        elif keyword == 'nlam':
+            if 'lambdas' in kwargs:
+                raise ValueError("Can't specify both lambdas & nlam keywords")
+            nlam = kwargs[keyword]
+        else:
+            raise ValueError("Unknown keyword argument '%s'" % keyword)
+
     # If predictors is a Fortran contiguous array, it will be overwritten.
-    # Decide whether we want this.
+    # Decide whether we want this. If it's not Fortran contiguous it will 
+    # be copied into that form anyway so there's no chance of overwriting.
     if np.isfortran(predictors):
-        if 'overwrite_pred_ok' not in kwargs or not kwargs['overwrite_pred_ok']:
+        if not overwrite_pred_ok:
             # Might as well make it F-ordered to avoid ANOTHER copy.
             predictors = predictors.copy(order='F')
 
     # target being a 1-dimensional array will usually be overwritten
     # with the standardized version unless we take steps to copy it.
-    if 'overwrite_targ_ok' not in kwargs or not kwargs['overwrite_targ_ok']:
+    if not overwrite_targ_ok:
         target = target.copy()
-
-    memlimit = predictors.shape[1] if memlimit is None else memlimit
-    largest = predictors.shape[1] if largest is None else largest
-
-    if memlimit < largest:
-        raise ValueError('Need largest <= memlimit')
-
-    elif balance < 0.0 or balance > 1.0:
-        raise ValueError('Must have 0.0 <= balance <= 1.0')
-
-    # Minimum change in largest predictor coefficient to continue processing
-    thr = kwargs['threshold'] if 'threshold' in kwargs else _DEFAULT_THRESHOLD
-
-    # Weights for the observation cases.
-    weights = np.asarray(kwargs['weights']).copy() \
-            if 'weights' in kwargs \
-            else np.ones(predictors.shape[0])
-
-    # Should we standardize the inputs?
-    isd = bool(kwargs['standardize']) if 'standardize' in kwargs else True
-
-    # Variable penalties for each predictor penalties[i] = 0 means don't
-    # penalize predictor i.
-    vp = np.asarray(kwargs['penalties']).copy() \
-            if 'penalties' in kwargs \
-            else np.ones(predictors.shape[1])
-
-    # Predictors to exclude completely.
-    if 'exclude' in kwargs:
-        exclude = list(kwargs['exclude'])
-        exclude = [len(exclude)] + exclude
-        jd = np.array(exclude)
-    else:
-        jd = np.array([0])
-
-    # Decide on regularization scheme based on keyword parameters.
-    if 'lambdas' in kwargs:
-        if 'flmin' in kwargs:
-            raise ValueError("Can't specify both lambdas and flmin keywords")
-        ulam = np.asarray(kwargs['lambdas'])
-
-        # Pass flmin > 1.0 indicating to use the user-supplied lambda values.
-        flmin = 2.
-        nlam = len(ulam)
-    else:
-        # If there are no user-provided lambdas, use flmin/nummodels to
-        # specify the regularization levels tried.
-        ulam = None
-        flmin = kwargs['flmin'] if 'flmin' in kwargs else _DEFAULT_FLMIN
-        nlam = kwargs['nummodels'] if 'nummodels' in kwargs else _DEFAULT_NLAM
-
+    
+    # Uniform weighting if no weights are specified.
+    if weights is None:
+        weights = np.ones(predictors.shape[0])
+    
+    # Uniform penalties if none were specified.
+    if vp is None:
+        vp = np.ones(predictors.shape[1])
+    
     # Call the Fortran wrapper.
     lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr =  \
             _glmnet.elnet(balance, predictors, target, weights, jd, vp,
                           memlimit, flmin, ulam, thr, nlam=nlam)
-
+    
     # Check for errors, documented in glmnet.f.
     if jerr != 0:
         if jerr == 10000:
@@ -88,13 +105,11 @@ def elastic_net(predictors, target, balance, memlimit=None,
             raise MemoryError('elnet() returned error code %d' % jerr)
         else:
             raise Exception('unknown error: %d' % jerr)
-
+    
     return lmu, a0, ca, ia, nin, rsq, alm, nlp, jerr
-    # return GlmnetLinearResults(lmu, a0, ca, ia, nin, rsq, alm, nlp,
-    #                            predictors.shape[1], balance)
-
 
 class GlmnetLinearModel(object):
+    """Class representing a linear model trained by Glmnet."""
     def __init__(self, a0, ca, ia, nin, rsq, alm, npred):
         self._intercept = a0
         self._coefficients = ca[:nin]
@@ -185,11 +200,20 @@ class GlmnetLinearResults(object):
     def indices(self):
         return self._ia
 
+    @property
+    def lambdas(self):
+        return self._alm[:self._lmu]
+
+    @property
+    def balance(self):
+        return self._parm
+
 def plot_paths(results, which_to_label=None):
     import matplotlib
     import matplotlib.pyplot as plt
     plt.clf()
     interactive_state = plt.isinteractive()
+    xvalues = -np.log(results.lambdas[1:])
     for index, path in enumerate(results.coefficients):
         if which_to_label and results.indices[index] in which_to_label:
             if which_to_label[results.indices[index]] is None:
@@ -201,15 +225,16 @@ def plot_paths(results, which_to_label=None):
 
 
         if which_to_label and label is None:
-            plt.plot(path, ':')
+            plt.plot(xvalues, path[1:], ':')
         else:
-            plt.plot(path, label=label)
-    plt.xlim(0, results.nummodels - 1)
+            plt.plot(xvalues, path[1:], label=label)
+    
+    plt.xlim(np.amin(xvalues), np.amax(xvalues)) 
+
     if which_to_label is not None:
         plt.legend(loc='upper left')
-    plt.title('Regularization paths')
-    plt.xlabel('Model index (different values of $\\lambda$)')
+    plt.title('Regularization paths ($\\rho$ = %.2f)' % results.balance)
+    plt.xlabel('$-\log(\lambda)$')
     plt.ylabel('Value of regression coefficient $\hat{\\beta}_i$')
-
     plt.show()
     plt.interactive(interactive_state)
