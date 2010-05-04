@@ -8,6 +8,18 @@ _DEFAULT_NLAM = 100
 def elastic_net(predictors, target, balance, memlimit=None,
                 largest=None, **kwargs):
 
+    # If predictors is a Fortran contiguous array, it will be overwritten.
+    # Decide whether we want this.
+    if np.isfortran(predictors):
+        if 'overwrite_pred_ok' not in kwargs or not kwargs['overwrite_pred_ok']:
+            # Might as well make it F-ordered to avoid ANOTHER copy.
+            predictors = predictors.copy(order='F')
+    
+    # target being a 1-dimensional array will usually be overwritten
+    # with the standardized version unless we take steps to copy it.
+    if 'overwrite_targ_ok' not in kwargs or not kwargs['overwrite_targ_ok']:
+        target = target.copy()
+
     memlimit = predictors.shape[1] if memlimit is None else memlimit
     largest = predictors.shape[1] if largest is None else largest
 
