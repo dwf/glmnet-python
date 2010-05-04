@@ -51,7 +51,8 @@ def elastic_net(predictors, target, balance, memlimit=None,
         elif keyword == 'standardize':
             isd = bool(kwargs[keyword])
         elif keyword == 'exclude':
-            exclude = list(kwargs[keyword])
+            # Add one since Fortran indices start at 1
+            exclude = (np.asarray(kwargs[keyword]) + 1).tolist()
             jd = np.array([len(exclude)] + exclude)
         elif keyword == 'lambdas':
             if 'flmin' in kwargs:
