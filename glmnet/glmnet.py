@@ -8,6 +8,9 @@ _DEFAULT_NLAM = 100
 def elastic_net(predictors, target, balance, memlimit=None,
                 largest=None, **kwargs):
 
+    predictors = np.asanyarray(predictors)
+    target = np.asanyarray(target)
+
     # If predictors is a Fortran contiguous array, it will be overwritten.
     # Decide whether we want this.
     if np.isfortran(predictors):
