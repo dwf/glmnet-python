@@ -13,7 +13,8 @@ class ElasticNet(object):
     def fit(self, X, y):
         n_lambdas, intercept_, coef_, _, _, rsquared_, lambdas, _, jerr \
         = elastic_net(X, y, self.rho, lambdas=[self.alpha])
-        assert jerr == 0
+        # elastic_net will fire exception instead
+        # assert jerr == 0
         self.coef_ = coef_
         self.intercept_ = intercept_
         self.rsquared_ = rsquared_
@@ -32,16 +33,16 @@ class ElasticNet(object):
                  self.intercept_[0], self.alpha, self.rsquared_[0])
 
 
-def elastic_net_path(X, y, rho):
+def elastic_net_path(X, y, rho, **kwargs):
     """return full path for ElasticNet"""
     n_lambdas, intercepts, coefs, _, _, _, lambdas, _, jerr \
-    = elastic_net(X, y, rho)
+    = elastic_net(X, y, rho, **kwargs)
     return lambdas, coefs, intercepts
 
 def Lasso(alpha):
     """Lasso based on GLMNET"""
     return ElasticNet(alpha, rho=1.0)
 
-def lasso_path(X, y):
+def lasso_path(X, y, **kwargs):
     """return full path for Lasso"""
-    return elastic_net_path(X, y, rho=1.0)
+    return elastic_net_path(X, y, rho=1.0, **kwargs)
