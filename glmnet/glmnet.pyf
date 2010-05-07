@@ -15,7 +15,7 @@ python module _glmnet ! in
             real*8 dimension(ni),depend(ni) :: vp
             integer optional,depend(x) :: ne=min(shape(x,1), nx)
             integer :: nx
-            integer optional,check(len(ulam)<=nlam),depend(ulam) :: nlam=len(ulam)
+            integer optional,check((flmin < 1.0 || len(ulam)==nlam)),depend(flmin,ulam) :: nlam=len(ulam)
             real*8 :: flmin
             real*8 dimension(nlam) :: ulam
             real*8 :: thr
@@ -65,7 +65,7 @@ python module _glmnet ! in
             real*8 dimension(ni) :: vp
             integer optional, depend(x) :: ne=shape(x,1)
             integer optional,check(shape(ca,0)==nx),depend(ca) :: nx=shape(ca,0)
-            integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
+            integer optional,check((flmin < 1.0 || len(ulam)==nlam)),depend(flmin,ulam) :: nlam=len(ulam)
             real*8 :: flmin
             real*8 dimension(nlam) :: ulam
             real*8 optional :: thr=1.0e-4
@@ -97,14 +97,14 @@ python module _glmnet ! in
             real*8 :: parm
             integer intent(hide),check(shape(x,0)==no),depend(x) :: no=shape(x,0)
             integer intent(hide),check(shape(x,1)==ni),depend(x) :: ni=shape(x,1)
-            integer optional,check(shape(a0,0)==nc),depend(a0) :: nc=shape(a0,0)
+            integer optional,check(shape(y,0)==max(2,nc)),depend(y) :: nc = ((shape(y,0) == 2) ? 1 : shape(y, 0))
             real*8 dimension(no,ni) :: x
-            real*8 dimension(no,max(2,nc)),depend(no,nc) :: y
+            real*8 dimension(no,max(2,nc)),depend(no) :: y
             integer dimension(*) :: jd
             real*8 dimension(ni),depend(ni) :: vp
-            integer :: ne
-            integer optional,check(shape(ca,0)==nx),depend(ca) :: nx=shape(ca,0)
-            integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
+            integer optional,depend(x) :: ne=min(shape(x,1), nx)
+            integer :: nx
+            integer optional,check((flmin < 1.0 || len(ulam)<=nlam)),depend(flmin,ulam) :: nlam=len(ulam)
             real*8 :: flmin
             real*8 dimension(nlam) :: ulam
             real*8 :: thr
@@ -113,7 +113,7 @@ python module _glmnet ! in
             integer optional :: kopt=1 ! Use modified Newton-Raphson by default
             integer intent(out) :: lmu
             real*8 intent(out),dimension(nc,nlam),depend(nlam) :: a0
-            real*8 intent(out),dimension(nx,nc,nlam),depend(nc,nlam) :: ca
+            real*8 intent(out),dimension(nx,nc,nlam),depend(nlam) :: ca
             integer intent(out),dimension(nx),depend(nx) :: ia
             integer intent(out),dimension(nlam),depend(nlam) :: nin
             real*8 intent(out),dimension(nlam),depend(nlam) :: dev
@@ -154,7 +154,7 @@ python module _glmnet ! in
             real*8 dimension(ni) :: vp
             integer :: ne
             integer optional,check(shape(ca,0)==nx),depend(ca) :: nx=shape(ca,0)
-            integer optional,check(len(ulam)>=nlam),depend(ulam) :: nlam=len(ulam)
+            integer optional,check((flmin < 1.0 || len(ulam)==nlam)),depend(flmin,ulam) :: nlam=len(ulam)
             real*8 :: flmin
             real*8 dimension(nlam) :: ulam
             real*8 :: thr
